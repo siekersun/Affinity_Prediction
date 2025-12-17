@@ -1,0 +1,47 @@
+/data/home/lixiang/.conda/envs/deepAntigen/lib/python3.8/site-packages/torch/nn/modules/transformer.py:276: UserWarning: The PyTorch API of nested tensors is in prototype stage and will change in the near future. (Triggered internally at ../aten/src/ATen/NestedTensorImpl.cpp:175.)
+  output = torch._nested_tensor_from_mask(output, src_key_padding_mask.logical_not(), mask_check=False)
+Imports loaded
+Loading data...
+Train: (2691232,), Valid: (336404,), Test: (336405,)
+Batch size: 1024
+
+Epoch 1/30
+Train Loss: 0.7441
+Valid Loss: 0.1702
+Saved best model at epoch 1 with val loss 0.1702
+
+Epoch 2/30
+Train Loss: 0.1386
+Valid Loss: 0.1531
+Saved best model at epoch 2 with val loss 0.1531
+
+Epoch 3/30
+Train Loss: 0.1341
+Valid Loss: 0.1834
+No improvement for 1 epoch(s)
+
+Epoch 4/30
+Train Loss: 0.1312
+Valid Loss: 0.1762
+No improvement for 2 epoch(s)
+
+Epoch 5/30
+Train Loss: 0.1290
+Valid Loss: 0.1616
+No improvement for 3 epoch(s)
+
+Epoch 6/30
+Train Loss: 0.1278
+Valid Loss: 0.1566
+No improvement for 4 epoch(s)
+
+Epoch 7/30
+Train Loss: 0.1269
+Valid Loss: 0.1552
+No improvement for 5 epoch(s)
+Early stopping triggered after 5 epochs
+Test RMSE: 0.39071834
+Test MAE : 0.26604837
+R2      : 0.9082104787542021
+Spearman: 0.7835922159527321
+Pearson : 0.9593254863676984
