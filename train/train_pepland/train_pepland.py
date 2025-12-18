@@ -61,6 +61,7 @@ scheduler = CyclicLR(
     base_lr=1e-4,        # 学习率的最小值 (min_lr)
     max_lr=1e-3,       # 学习率的最大值 (max_lr)
     step_size_up=8, # 学习率从 min_lr 上升到 max_lr 所需的迭代次数
+    step_size_down=4,
     mode='exp_range',   # 调度模式：'triangular' (三角波)
     gamma=0.95,
     cycle_momentum=False # 如果使用带有动量的优化器 (如 Adam)，通常设置为 False
@@ -89,7 +90,7 @@ for epoch in range(EPOCH):
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
-    scheduler.step()
+    # scheduler.step()
     avg_train_loss = total_loss / len(train_loader)
     print(f"Train Loss: {avg_train_loss:.4f}")
 

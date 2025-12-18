@@ -33,12 +33,6 @@ class FCLayer(nn.Module):
             nn.LeakyReLU(0.1),
             nn.Dropout(dp),
             nn.Linear(max_dim, out_dim),
-            nn.LeakyReLU(0.1),
-            nn.Dropout(dp),
-            # nn.Linear(out_dim, max_dim),
-            # nn.LeakyReLU(0.1),
-            # nn.Dropout(dp),
-            # nn.Linear(max_dim, out_dim),
             # nn.LeakyReLU(0.1),
             # nn.Dropout(dp),
             # nn.Linear(out_dim, max_dim),
@@ -47,7 +41,13 @@ class FCLayer(nn.Module):
             # nn.Linear(max_dim, out_dim),
             # nn.LeakyReLU(0.1),
             # nn.Dropout(dp),
-            nn.Linear(out_dim, out_dim)
+            # nn.Linear(out_dim, max_dim),
+            # nn.LeakyReLU(0.1),
+            # nn.Dropout(dp),
+            # nn.Linear(max_dim, out_dim),
+            # nn.LeakyReLU(0.1),
+            # nn.Dropout(dp),
+            # nn.Linear(out_dim, out_dim)
         )
         self.resfc = nn.Linear(in_dim, out_dim)
 
@@ -57,7 +57,7 @@ class FCLayer(nn.Module):
 # 3️⃣ 模型定义
 # =========================
 class TransformerRegressor(nn.Module):
-    def __init__(self, emb_dim, hidden_dim=100, nhead=8, nfc=3, nlayers=1, dp=0.5):
+    def __init__(self, emb_dim, hidden_dim=512, nhead=8, nfc=15, nlayers=1, dp=0.5):
         super().__init__()
 
         self.nlayers = nlayers
@@ -65,6 +65,8 @@ class TransformerRegressor(nn.Module):
         self.x_fc = nn.Sequential(
             nn.Linear(emb_dim, 1*hidden_dim),
         )
+        self.ln1 = nn.LayerNorm(emb_dim)
+        self.ln2 = nn.LayerNorm(253)
 
         self.x_encoder = nn.ModuleList()
         # self.x_encoder.append(FCLayer(emb_dim, hidden_dim))
@@ -104,11 +106,14 @@ class TransformerRegressor(nn.Module):
             self.fc.append(FCLayer(3*hidden_dim, 3*hidden_dim, dp=dp))
 
         # 预测层
-        self.predict = nn.Linear(3*hidden_dim, 1)
+        self.predict = nn.Linear(2*hidden_dim, 1)
 
         
 
     def forward(self, x, smiles_x ): 
+
+        x = self.ln1(x)
+        smiles_x = self.ln2(smiles_x)
         
         H = smiles_x
         smiles_emb = self.smiles_fc(smiles_x)
@@ -122,11 +127,11 @@ class TransformerRegressor(nn.Module):
         for i in range(self.nfc):
             x_emb = self.x_encoder[i](x_emb)
             smiles_emb = self.smiles_encoder[i](smiles_emb)
-            interact = self.interact_encoder[i](self.ln[i](interact + x_emb*smiles_emb))
+            # interact = self.interact_encoder[i](self.ln[i](interact + x_emb*smiles_emb))
 
 
-        # all_x = torch.concat([x_emb, smiles_emb], dim=-1)
-        all_x = torch.concat([interact, interact, interact], dim=-1)
+        all_x = torch.concat([x_emb, smiles_emb], dim=-1)
+        # all_x = torch.concat([interact, interact, interact], dim=-1)
         # all_x = interact
 
         # for i in range(self.nfc):

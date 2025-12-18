@@ -89,16 +89,16 @@ for epoch in range(EPOCH):
     total_loss = 0
     
     for mon_emb, bit_fp, count_fp, Chem_emb, mask, y in tqdm(train_loader, desc="Training"): 
-        mon_emb, bit_fp, count_fp, Chem_emb, mask = mon_emb.to(device), bit_fp.to(device), count_fp.to(device), Chem_emb.to(device), mask.to(device)
+        mon_emb, bit_fp, count_fp, Chem_emb, mask, y = mon_emb.to(device), bit_fp.to(device), count_fp.to(device), Chem_emb.to(device), mask.to(device), y.to(device)
         optimizer.zero_grad()
         
-        pred= model(mon_emb, bit_fp, count_fp, Chem_emb, mask, y) 
+        pred= model(mon_emb, bit_fp, count_fp, Chem_emb, mask) 
 
         loss = criterion(pred, y)
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
-    scheduler.step()
+    # scheduler.step()
     avg_train_loss = total_loss / len(train_loader)
     print(f"Train Loss: {avg_train_loss:.4f}")
 
@@ -107,9 +107,9 @@ for epoch in range(EPOCH):
     val_loss = 0
     with torch.no_grad():
         for mon_emb, bit_fp, count_fp, Chem_emb, mask, y in tqdm(valid_loader, desc="Validation"): 
-            mon_emb, bit_fp, count_fp, Chem_emb, mask = mon_emb.to(device), bit_fp.to(device), count_fp.to(device), Chem_emb.to(device), mask.to(device)
+            mon_emb, bit_fp, count_fp, Chem_emb, mask, y = mon_emb.to(device), bit_fp.to(device), count_fp.to(device), Chem_emb.to(device), mask.to(device), y.to(device)
             
-            pred= model(mon_emb, bit_fp, count_fp, Chem_emb, mask, y)  
+            pred= model(mon_emb, bit_fp, count_fp, Chem_emb, mask)  
             val_loss += criterion(pred, y).item()
     avg_val_loss = val_loss / len(valid_loader)
     print(f"Valid Loss: {avg_val_loss:.4f}")
@@ -141,7 +141,7 @@ def evaluate(loader, name):
         for mon_emb, bit_fp, count_fp, Chem_emb, mask, y in tqdm(loader, desc="Training"): 
             mon_emb, bit_fp, count_fp, Chem_emb, mask = mon_emb.to(device), bit_fp.to(device), count_fp.to(device), Chem_emb.to(device), mask.to(device)
             
-            pred= model(mon_emb, bit_fp, count_fp, Chem_emb, mask, y)
+            pred= model(mon_emb, bit_fp, count_fp, Chem_emb, mask)
             preds.append(pred.cpu().numpy())
             trues.append(y.numpy())
 

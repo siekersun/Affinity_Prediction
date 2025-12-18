@@ -58,7 +58,7 @@ class FCLayer(nn.Module):
 # 3️⃣ 模型定义
 # =========================
 class TransformerRegressor(nn.Module):
-    def __init__(self, mon_dim=64, Chem_emb=768, bit_emb=1024, count_emb=253, hidden_dim=64, nhead=4, n_trans=1, nfc=3, nlayers=1, dp=0.5):
+    def __init__(self, mon_dim=64, Chem_emb=768, bit_emb=1024, count_emb=253, hidden_dim=64, nhead=4, n_trans=1, nfc=10, nlayers=1, dp=0.5):
         super().__init__()
 
         self.nlayers = nlayers
@@ -72,7 +72,10 @@ class TransformerRegressor(nn.Module):
         self.smiles_fc = nn.Sequential(nn.Linear(count_emb, 1*hidden_dim),)
 
         encoder_layer = nn.TransformerEncoderLayer(d_model=mon_dim, nhead=nhead, batch_first=True)
-        self.trans_encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_trans)
+        self.trans_encoder = nn.ModuleList()
+        self.trans_encoder.append(nn.TransformerEncoder(encoder_layer, num_layers=n_trans))
+        for _ in range(self.nfc-1):
+            self.trans_encoder.append(FCLayer(1*hidden_dim, 1*hidden_dim, dp=dp))
 
         self.x_encoder = nn.ModuleList()
         self.x_encoder.append(FCLayer(Chem_emb, hidden_dim))
@@ -109,7 +112,8 @@ class TransformerRegressor(nn.Module):
 
         
 
-    def forward(self, mon_emb, bit_fp, count_fp, Chem_emb, mask, y): 
+    def forward(self, mon_emb, bit_fp, count_fp, Chem_emb, mask): 
+        H = bit_fp
 
         mon_emb = self.ln_mon(mon_emb)
         count_fp = self.ln_count(count_fp)
@@ -118,7 +122,7 @@ class TransformerRegressor(nn.Module):
         key_padding_mask = (mask == 0) 
         
         # Transformer 语义 编码
-        out = self.trans_encoder(mon_emb, src_key_padding_mask=key_padding_mask)
+        out = self.trans_encoder[0](mon_emb, src_key_padding_mask=key_padding_mask)
         trans_emb = (out * mask.unsqueeze(-1)).sum(dim=1) / mask.sum(dim=1, keepdim=True)
 
         # 前馈 结构及字符 编码
@@ -128,6 +132,8 @@ class TransformerRegressor(nn.Module):
         smiles_emb = count_fp
         # interact = smiles_emb*x_emb
         for i in range(self.nfc):
+            if i > 0:
+                trans_emb = self.trans_encoder[i](trans_emb)
             x_emb = self.x_encoder[i](x_emb)
             smiles_emb = self.smiles_encoder[i](smiles_emb)
             # interact = self.interact_encoder[i]((interact + x_emb*smiles_emb)/2)
@@ -138,9 +144,9 @@ class TransformerRegressor(nn.Module):
         # for i in range(self.nfc):
         #     all_x = self.fc[i](all_x)
 
-        # all_res = all_x
-        # for i in range(self.nlayers):
-        #     all_x = self.hgnn_encoder[i](all_x, H)
+        all_res = all_x
+        for i in range(self.nlayers):
+            all_x = self.hgnn_encoder[i](all_x, H)
 
         # all_x = self.res_fc2(all_res) + all_x
         # 预测
