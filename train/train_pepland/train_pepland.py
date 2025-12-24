@@ -8,6 +8,7 @@ import json
 import h5py
 import numpy as np
 import pandas as pd
+import random
 import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import CyclicLR
@@ -18,7 +19,17 @@ from scipy import stats
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from .model_pepland import TransformerRegressor
+# from model import TransformerRegressor
 from .pepland_dataloader import get_dataloaders
+
+def set_seed(seed: int = 42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+set_seed(42)
+
 
 print("Imports loaded")
 
@@ -43,10 +54,8 @@ train_loader, valid_loader, test_loader = get_dataloaders(
     mix=False
 )
 
-
-
-device = 'cuda:2' if torch.cuda.is_available() else 'cpu'
-model = TransformerRegressor(emb_dim=768, hidden_dim=100).to(device)
+device = 'cuda:3' if torch.cuda.is_available() else 'cpu'
+model = TransformerRegressor(emb_dim=768).to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
 trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -72,7 +81,7 @@ scheduler = CyclicLR(
 # =========================
 EPOCH = 64
 best_val_loss = float('inf')
-save_path = 'train_pepland/save/best_model.pth'
+save_path = '/data/home/lixiang/software/GPepT/train/train_pepland/save/best_model.pth'
 patience = 10
 counter = 0
 
@@ -90,7 +99,7 @@ for epoch in range(EPOCH):
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
-    # scheduler.step()
+    scheduler.step()
     avg_train_loss = total_loss / len(train_loader)
     print(f"Train Loss: {avg_train_loss:.4f}")
 
@@ -131,7 +140,6 @@ def evaluate(loader, name):
             pred = model(x, smiles_f).cpu().numpy()
             preds.append(pred)
             trues.append(y.numpy())
-
     preds = np.concatenate(preds).ravel()
     trues = np.concatenate(trues).ravel()
 

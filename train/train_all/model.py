@@ -34,12 +34,6 @@ class FCLayer(nn.Module):
             nn.LeakyReLU(0.1),
             nn.Dropout(dp),
             nn.Linear(max_dim, out_dim),
-            nn.LeakyReLU(0.1),
-            nn.Dropout(dp),
-            # nn.Linear(out_dim, max_dim),
-            # nn.LeakyReLU(0.1),
-            # nn.Dropout(dp),
-            # nn.Linear(max_dim, out_dim),
             # nn.LeakyReLU(0.1),
             # nn.Dropout(dp),
             # nn.Linear(out_dim, max_dim),
@@ -48,7 +42,13 @@ class FCLayer(nn.Module):
             # nn.Linear(max_dim, out_dim),
             # nn.LeakyReLU(0.1),
             # nn.Dropout(dp),
-            nn.Linear(out_dim, out_dim)
+            # nn.Linear(out_dim, max_dim),
+            # nn.LeakyReLU(0.1),
+            # nn.Dropout(dp),
+            # nn.Linear(max_dim, out_dim),
+            # nn.LeakyReLU(0.1),
+            # nn.Dropout(dp),
+            # nn.Linear(out_dim, out_dim)
         )
         self.resfc = nn.Linear(in_dim, out_dim)
 
@@ -58,7 +58,7 @@ class FCLayer(nn.Module):
 # 3️⃣ 模型定义
 # =========================
 class TransformerRegressor(nn.Module):
-    def __init__(self, mon_dim=64, Chem_emb=768, bit_emb=1024, count_emb=253, hidden_dim=64, nhead=4, n_trans=1, nfc=10, nlayers=1, dp=0.5):
+    def __init__(self, mon_dim=128, Chem_emb=768, bit_emb=1024, count_emb=253, hidden_dim=128, nhead=4, n_trans=1, nfc=10, nlayers=3, dp=0.5):
         super().__init__()
 
         self.nlayers = nlayers
@@ -70,6 +70,7 @@ class TransformerRegressor(nn.Module):
 
         self.x_fc = nn.Sequential(nn.Linear(Chem_emb, 1*hidden_dim),)
         self.smiles_fc = nn.Sequential(nn.Linear(count_emb, 1*hidden_dim),)
+        self.trans_res = nn.Sequential(nn.Linear(mon_dim, mon_dim))
 
         encoder_layer = nn.TransformerEncoderLayer(d_model=mon_dim, nhead=nhead, batch_first=True)
         self.trans_encoder = nn.ModuleList()
@@ -115,14 +116,14 @@ class TransformerRegressor(nn.Module):
     def forward(self, mon_emb, bit_fp, count_fp, Chem_emb, mask): 
         H = bit_fp
 
-        mon_emb = self.ln_mon(mon_emb)
-        count_fp = self.ln_count(count_fp)
-        Chem_emb = self.ln_Chem(Chem_emb)
+        # mon_emb = self.ln_mon(mon_emb)
+        # count_fp = self.ln_count(count_fp)
+        # Chem_emb = self.ln_Chem(Chem_emb)
 
         key_padding_mask = (mask == 0) 
         
         # Transformer 语义 编码
-        out = self.trans_encoder[0](mon_emb, src_key_padding_mask=key_padding_mask)
+        out = self.trans_encoder[0](mon_emb, src_key_padding_mask=key_padding_mask) + self.trans_res(mon_emb)
         trans_emb = (out * mask.unsqueeze(-1)).sum(dim=1) / mask.sum(dim=1, keepdim=True)
 
         # 前馈 结构及字符 编码
@@ -144,9 +145,9 @@ class TransformerRegressor(nn.Module):
         # for i in range(self.nfc):
         #     all_x = self.fc[i](all_x)
 
-        all_res = all_x
-        for i in range(self.nlayers):
-            all_x = self.hgnn_encoder[i](all_x, H)
+        # all_res = all_x
+        # for i in range(self.nlayers):
+        #     all_x = self.hgnn_encoder[i](all_x, H)
 
         # all_x = self.res_fc2(all_res) + all_x
         # 预测

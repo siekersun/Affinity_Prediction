@@ -14,7 +14,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from scipy import stats
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from .model_pepland import TransformerRegressor
+from .model import TransformerRegressor
 from transformers import AutoModelWithLMHead, AutoTokenizer, pipeline, AutoModel
 
 print("Imports loaded")
@@ -22,7 +22,7 @@ print("Imports loaded")
 # =========================
 # 1️⃣ 数据加载与处理
 # =========================
-test_csv_path  = '/data/home/lixiang/software/GPepT/train/train_AA/iGB3externel.csv'
+test_csv_path  = '/data/home/lixiang/software/GPepT/train/train_pepland/iGB3externel.csv'
 # h5_file        = '/nas1/develop/lixiang/data/class_AA/smiles_embed.h5'
 smiles_file = '/nas1/develop/lixiang/data/class_AA/seq_smiles_fp_matrix.npz'
 # pepland_path = '/nas1/develop/lixiang/data/class_AA/seq_peplandembed.h5'
@@ -84,7 +84,7 @@ BATCH = 2837
 device = 'cuda:2' if torch.cuda.is_available() else 'cpu'
 model = TransformerRegressor(emb_dim=768, hidden_dim=100).to(device)
 
-model_path = 'train_pepland/best_model.pth'
+model_path = 'train_pepland/save/best_model_best111.pth'
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.eval()
 
@@ -93,5 +93,5 @@ pred = model(x, smiles_x)
 data_test['predict'] = pred.cpu().detach().numpy()
 data_test['Credibility'] = Credibility
 
-data_test.to_csv('/data/home/lixiang/software/GPepT/train/train_AA/Predict/predict_pepland.csv')
+data_test.to_csv('/data/home/lixiang/software/GPepT/train/train_pepland/Predict/predict_pepland.csv')
 

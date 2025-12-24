@@ -7,6 +7,7 @@ import ast
 import json
 import numpy as np
 import pandas as pd
+import random
 import torch
 import h5py
 import torch.nn as nn
@@ -20,6 +21,16 @@ from tqdm import tqdm
 from .model import TransformerRegressor
 from .dataloader import get_dataloaders
 
+
+
+def set_seed(seed: int = 42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+set_seed(42)
+
 print("Imports loaded")
 
 # =========================
@@ -31,7 +42,7 @@ valid_csv_path = '/nas1/develop/lixiang/data/split_train_test/test_data_numW1.cs
 test_csv_path = '/nas1/develop/lixiang/data/split_train_test/test_data_numW2.csv'
 bit_fp_file = '/nas1/develop/lixiang/data/class_AA/smiles_embed.h5'
 count_fp_file = '/nas1/develop/lixiang/data/class_AA/seq_smiles_fp_matrix.npz'
-GPepT_emb_path = '../GPepT_emb_64d.csv'
+GPepT_emb_path = '../GPepT_emb_128d.csv'
 # GPepT_emb_path = '../GPepT_emb.csv'
 ChemBERTa_path = '/nas1/develop/lixiang/data/class_AA/ChemBERT_embed.h5'
 
@@ -67,6 +78,7 @@ scheduler = CyclicLR(
     base_lr=0.1*lr,
     max_lr=lr,
     step_size_up=8, 
+    step_size_down=4,
     mode='exp_range', 
     gamma=0.95,
     cycle_momentum=False 
@@ -78,7 +90,7 @@ scheduler = CyclicLR(
 EPOCH = 64
 best_val_loss = float('inf')
 save_path = 'train_all/save/best_model.pth'
-patience = 10
+patience = 12
 counter = 0
 
 for epoch in range(EPOCH):
@@ -98,7 +110,7 @@ for epoch in range(EPOCH):
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
-    # scheduler.step()
+    scheduler.step()
     avg_train_loss = total_loss / len(train_loader)
     print(f"Train Loss: {avg_train_loss:.4f}")
 
